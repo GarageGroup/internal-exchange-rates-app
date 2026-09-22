@@ -109,7 +109,6 @@ jobs:
         env:
           FUNCTION_PRINCIPAL_ID: ${{ steps.function_identity.outputs.principal_id }}
           DATAVERSE_SERVICE_URL: ${{ vars.DATAVERSE_SERVICE_URL }}
-          DATAVERSE_BUSINESS_UNIT_ID: ${{ vars.DATAVERSE_BUSINESS_UNIT_ID }}
           DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME: ${{ vars.DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME }}
         with:
           inlineScript: bash ./.infra/scripts/grant-dataverse-managed-identity-access.sh

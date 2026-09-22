@@ -151,8 +151,7 @@ Managed Identity функции автоматически добавляет в
 | `AZURE_NAME_POSTFIX` | Да | `test` или `prod` |
 | `STORAGE_ACCOUNT_NAME` | Да | Точное имя Storage Account приложения: 3-24 строчные латинские буквы и цифры, например `stintexratestest` |
 | `DATAVERSE_SERVICE_URL` | Да | URL Dataverse без `/` в конце |
-| `DATAVERSE_BUSINESS_UNIT_ID` | Да | GUID Business Unit для Application User функции |
-| `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME` | Да | Имя прикладной Dataverse-роли для Function Managed Identity; роль ищется в указанном Business Unit |
+| `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME` | Да | Имя Dataverse-роли для Function Managed Identity; Business Unit определяется по найденной роли |
 | `FUNC_INSTANCE_MEMORY` | Нет | Память Flex instance: `512`, `2048` или `4096`; default `2048` |
 | `FUNC_MAX_INSTANCE_COUNT` | Нет | Максимальное число Flex instances; default `100` |
 | `APIM_RESOURCE_GROUP` | Да для APIM | Resource group существующего APIM |
