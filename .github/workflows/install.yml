@@ -27,8 +27,6 @@ jobs:
     if: ${{ !inputs.skip_install }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
-    outputs:
-      function_principal_id: ${{ steps.install.outputs.function_principal_id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -64,13 +62,42 @@ jobs:
           inlineScript: az logout
 
   grant-dataverse-access:
-    if: ${{ !inputs.skip_install && !inputs.skip_dataverse }}
+    if: ${{ always() && !inputs.skip_dataverse && (needs.install.result == 'success' || needs.install.result == 'skipped') }}
     needs: install
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.DEPLOY_TENANT_ID }}
+          subscription-id: ${{ vars.DEPLOY_SUBSCRIPTION_ID }}
+      - name: Resolve Function managed identity
+        id: function_identity
+        uses: azure/cli@v3
+        env:
+          FUNCTION_APP_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+        with:
+          inlineScript: |
+            principal_id="$(az functionapp identity show \
+              --name "$FUNCTION_APP_NAME" \
+              --resource-group "$RESOURCE_GROUP_NAME" \
+              --query principalId \
+              --output tsv \
+              --only-show-errors)"
+            if [ -z "$principal_id" ]; then
+              echo "System Assigned Managed Identity was not found for $FUNCTION_APP_NAME" >&2
+              exit 1
+            fi
+            echo "principal_id=$principal_id" >> "$GITHUB_OUTPUT"
+      - name: Azure Logout
+        uses: azure/cli@v3
+        with:
+          inlineScript: az logout
       - name: Log in to Azure for Dataverse via OIDC
         uses: azure/login@v3
         with:
@@ -80,7 +107,7 @@ jobs:
       - name: Grant Dataverse role to Function managed identity
         uses: azure/cli@v3
         env:
-          FUNCTION_PRINCIPAL_ID: ${{ needs.install.outputs.function_principal_id }}
+          FUNCTION_PRINCIPAL_ID: ${{ steps.function_identity.outputs.principal_id }}
           DATAVERSE_SERVICE_URL: ${{ vars.DATAVERSE_SERVICE_URL }}
           DATAVERSE_BUSINESS_UNIT_ID: ${{ vars.DATAVERSE_BUSINESS_UNIT_ID }}
           DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME: ${{ vars.DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME }}
