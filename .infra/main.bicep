@@ -8,6 +8,10 @@ param nameRoot string
 @maxLength(20)
 param environmentName string
 
+@minLength(3)
+@maxLength(24)
+param storageAccountName string
+
 param dataverseServiceUrl string
 
 @allowed([512, 2048, 4096])
@@ -17,7 +21,7 @@ param instanceMemoryMB int = 2048
 @maxValue(1000)
 param maximumInstanceCount int = 100
 
-var location = 'westeurope'
+var location = 'northeurope'
 var suffix = '${nameRoot}-${environmentName}'
 var tags = {
   application: nameRoot
@@ -46,7 +50,7 @@ resource insights 'Microsoft.Insights/components@2020-02-02' = {
 }
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
-  name: 'st${uniqueString(resourceGroup().id, nameRoot, environmentName)}'
+  name: storageAccountName
   location: location
   kind: 'StorageV2'
   sku: { name: 'Standard_LRS' }

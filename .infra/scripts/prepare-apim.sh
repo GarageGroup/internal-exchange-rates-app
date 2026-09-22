@@ -8,7 +8,7 @@ if [[ -z "${APIM_RESOURCE_GROUP:-}" && -z "${APIM_SERVICE_NAME:-}" ]]; then
 fi
 : "${APIM_RESOURCE_GROUP:?Set APIM_RESOURCE_GROUP and APIM_SERVICE_NAME together}"
 : "${APIM_SERVICE_NAME:?Set APIM_RESOURCE_GROUP and APIM_SERVICE_NAME together}"
-[[ "$(az apim show -g "$APIM_RESOURCE_GROUP" -n "$APIM_SERVICE_NAME" --query location -o tsv --only-show-errors)" == westeurope ]] || {
-  echo 'Existing APIM must be in westeurope' >&2; exit 1;
+[[ "$(az apim show -g "$APIM_RESOURCE_GROUP" -n "$APIM_SERVICE_NAME" --query location -o tsv --only-show-errors)" == northeurope ]] || {
+  echo 'Existing APIM must be in North Europe' >&2; exit 1;
 }
 echo 'APIM verified; no methods are created yet.'

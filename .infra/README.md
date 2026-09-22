@@ -149,6 +149,7 @@ Managed Identity функции автоматически добавляет в
 | `DEPLOY_DATAVERSE_TENANT_ID` | Да | Tenant ID для Dataverse OIDC login |
 | `AZURE_NAME_ROOT` | Да | Общая часть имён, например `internal-exchange-rates` |
 | `AZURE_NAME_POSTFIX` | Да | `test` или `prod` |
+| `STORAGE_ACCOUNT_NAME` | Да | Точное имя Storage Account приложения: 3-24 строчные латинские буквы и цифры, например `stintexratestest` |
 | `DATAVERSE_SERVICE_URL` | Да | URL Dataverse без `/` в конце |
 | `DATAVERSE_BUSINESS_UNIT_ID` | Да | GUID Business Unit для Application User функции |
 | `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME` | Да | Имя прикладной Dataverse-роли для Function Managed Identity; роль ищется в указанном Business Unit |
