@@ -1,0 +1,98 @@
+name: Publish Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore Internal.ExchangeRates.slnx
+      - name: Build
+        run: dotnet build Internal.ExchangeRates.slnx --no-restore -c Release
+      - name: Test
+        run: dotnet test Internal.ExchangeRates.slnx --no-build --no-restore -c Release
+      - name: Publish
+        run: dotnet publish src/app/AzureFunc/AzureFunc.csproj -c Release -r linux-x64 --self-contained false -o '${{ github.workspace }}/publish'
+      - name: Resolve release information
+        id: release_info
+        run: |
+          echo "version=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          echo "datetime=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+      - name: Update appsettings.json
+        run: |
+          jq --arg version '${{ steps.release_info.outputs.version }}' --arg date '${{ steps.release_info.outputs.datetime }}' \
+            '.Info.ApiVersion = $version | .Info.BuildDateTime = $date' \
+            ./publish/appsettings.json > ./publish/appsettings.tmp.json
+          mv ./publish/appsettings.tmp.json ./publish/appsettings.json
+      - name: Archive publish folder
+        env:
+          VERSION: ${{ steps.release_info.outputs.version }}
+          ARTIFACT_NAME: ${{ vars.AZURE_ARTIFACT_NAME }}
+        run: cd ./publish && zip -r "${ARTIFACT_NAME}-${VERSION}.zip" ./
+      - name: Upload to Azure Blob Storage
+        uses: azure/cli@v3
+        env:
+          VERSION: ${{ steps.release_info.outputs.version }}
+          ARTIFACT_NAME: ${{ vars.AZURE_ARTIFACT_NAME }}
+          ARTIFACT_CONTAINER: ${{ vars.AZURE_ARTIFACT_CONTAINER_NAME }}
+          ARTIFACT_ACCOUNT: ${{ vars.AZURE_ARTIFACT_ACCOUNT_NAME }}
+          ARTIFACT_ACCOUNT_KEY: ${{ secrets.AZURE_ACCOUNT_KEY_ARTIFACT }}
+        with:
+          inlineScript: |
+            az storage blob upload \
+              --container-name "$ARTIFACT_CONTAINER" \
+              --file "./publish/${ARTIFACT_NAME}-${VERSION}.zip" \
+              --name "${ARTIFACT_NAME}-${VERSION}.zip" \
+              --account-name "$ARTIFACT_ACCOUNT" \
+              --account-key "$ARTIFACT_ACCOUNT_KEY" \
+              --overwrite true \
+              --only-show-errors
+
+  deploy-to-test:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: Test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Download from Azure Blob Storage
+        run: |
+          mkdir -p ./publish
+          az storage blob download \
+            --name "${{ vars.AZURE_ARTIFACT_NAME }}-${{ github.event.release.tag_name }}.zip" \
+            --file "./publish/${{ vars.AZURE_ARTIFACT_NAME }}-${{ github.event.release.tag_name }}.zip" \
+            --account-name "${{ vars.AZURE_ARTIFACT_ACCOUNT_NAME }}" \
+            --container-name "${{ vars.AZURE_ARTIFACT_CONTAINER_NAME }}" \
+            --account-key "${{ secrets.AZURE_ACCOUNT_KEY_ARTIFACT }}" \
+            --only-show-errors
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.DEPLOY_TENANT_ID }}
+          subscription-id: ${{ vars.DEPLOY_SUBSCRIPTION_ID }}
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          package: ./publish/${{ vars.AZURE_ARTIFACT_NAME }}-${{ github.event.release.tag_name }}.zip
+          sku: flexconsumption
+          remote-build: false
+      - name: Azure Logout
+        if: ${{ always() }}
+        uses: azure/cli@v3
+        with:
+          inlineScript: az logout

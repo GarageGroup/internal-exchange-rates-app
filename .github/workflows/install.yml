@@ -1,0 +1,92 @@
+name: Install Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        default: Test
+        options: [Test, Prod]
+      skip_install:
+        description: Skip infrastructure installation
+        type: boolean
+        default: false
+      skip_dataverse:
+        description: Skip Dataverse Application User configuration
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  install:
+    if: ${{ !inputs.skip_install }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    outputs:
+      function_principal_id: ${{ steps.install.outputs.function_principal_id }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Log in to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.DEPLOY_CLIENT_ID }}
+          tenant-id: ${{ vars.DEPLOY_TENANT_ID }}
+          subscription-id: ${{ vars.DEPLOY_SUBSCRIPTION_ID }}
+      - name: Install infrastructure resources
+        id: install
+        uses: azure/cli@v3
+        env:
+          AZURE_NAME_ROOT: ${{ vars.AZURE_NAME_ROOT }}
+          AZURE_NAME_POSTFIX: ${{ vars.AZURE_NAME_POSTFIX }}
+          DATAVERSE_SERVICE_URL: ${{ vars.DATAVERSE_SERVICE_URL }}
+          FUNC_INSTANCE_MEMORY: ${{ vars.FUNC_INSTANCE_MEMORY }}
+          FUNC_MAX_INSTANCE_COUNT: ${{ vars.FUNC_MAX_INSTANCE_COUNT }}
+        with:
+          inlineScript: bash ./.infra/scripts/install-azure-resources.sh
+      - name: Verify existing APIM
+        uses: azure/cli@v3
+        env:
+          APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
+          APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
+        with:
+          inlineScript: bash ./.infra/scripts/prepare-apim.sh
+      - name: Azure Logout
+        if: ${{ always() }}
+        uses: azure/cli@v3
+        with:
+          inlineScript: az logout
+
+  grant-dataverse-access:
+    if: ${{ !inputs.skip_install && !inputs.skip_dataverse }}
+    needs: install
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Log in to Azure for Dataverse via OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.DEPLOY_DATAVERSE_CLIENT_ID }}
+          tenant-id: ${{ vars.DEPLOY_DATAVERSE_TENANT_ID }}
+          allow-no-subscriptions: true
+      - name: Grant Dataverse role to Function managed identity
+        uses: azure/cli@v3
+        env:
+          FUNCTION_PRINCIPAL_ID: ${{ needs.install.outputs.function_principal_id }}
+          DATAVERSE_SERVICE_URL: ${{ vars.DATAVERSE_SERVICE_URL }}
+          DATAVERSE_BUSINESS_UNIT_ID: ${{ vars.DATAVERSE_BUSINESS_UNIT_ID }}
+          DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME: ${{ vars.DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME }}
+        with:
+          inlineScript: bash ./.infra/scripts/grant-dataverse-managed-identity-access.sh
+      - name: Azure Logout
+        if: ${{ always() }}
+        uses: azure/cli@v3
+        with:
+          inlineScript: az logout
