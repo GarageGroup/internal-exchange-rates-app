@@ -1,16 +1,17 @@
 <Solution>
+  <Folder Name="/shared/" />
   <Folder Name="/shared/Entity/">
     <Project Path="src/shared/Entity/ExchangeRate/ExchangeRate.csproj" />
   </Folder>
+  <Folder Name="/service/" />
   <Folder Name="/service/ExchangeRate/">
     <Project Path="src/service/ExchangeRate/Contract/Contract.csproj" />
     <Project Path="src/service/ExchangeRate/Api/Api.csproj" />
-    <Project Path="src/service/ExchangeRate/Test/Test.csproj" />
   </Folder>
+  <Folder Name="/endpoint/" />
   <Folder Name="/endpoint/ExchangeRate.GetSet/">
     <Project Path="src/endpoint/ExchangeRate.GetSet/Contract/Contract.csproj" />
     <Project Path="src/endpoint/ExchangeRate.GetSet/Handler/Handler.csproj" />
-    <Project Path="src/endpoint/ExchangeRate.GetSet/Test/Test.csproj" />
   </Folder>
   <Folder Name="/app/">
     <Project Path="src/app/AzureFunc/AzureFunc.csproj" />
