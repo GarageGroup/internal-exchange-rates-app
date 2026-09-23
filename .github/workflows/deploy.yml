@@ -57,6 +57,18 @@ jobs:
           package: ./publish/${{ vars.AZURE_ARTIFACT_NAME }}-${{ inputs.version }}.zip
           sku: flexconsumption
           remote-build: false
+      - name: Set Function App Settings
+        uses: azure/cli@v3
+        env:
+          AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_STORAGE_ACCOUNT_NAME: ${{ vars.STORAGE_ACCOUNT_NAME }}
+          DATAVERSE_SERVICE_URL: ${{ vars.DATAVERSE_SERVICE_URL }}
+          EXCHANGE_RATE_CURRENCY_PAIRS: ${{ vars.EXCHANGE_RATE_CURRENCY_PAIRS }}
+          CURRENT_RATE_UPDATE_SCHEDULE: ${{ vars.CURRENT_RATE_UPDATE_SCHEDULE }}
+          DAILY_RATE_UPDATE_SCHEDULE: ${{ vars.DAILY_RATE_UPDATE_SCHEDULE }}
+        with:
+          inlineScript: bash ./.infra/scripts/set-function-app-settings.sh
       - name: Azure Logout
         if: ${{ always() }}
         uses: azure/cli@v3

@@ -1,17 +1,29 @@
 <Solution>
-  <Folder Name="/shared/" />
-  <Folder Name="/shared/Entity/">
-    <Project Path="src/shared/Entity/ExchangeRate/ExchangeRate.csproj" />
-  </Folder>
   <Folder Name="/service/" />
   <Folder Name="/service/ExchangeRate/">
     <Project Path="src/service/ExchangeRate/Contract/Contract.csproj" />
     <Project Path="src/service/ExchangeRate/Api/Api.csproj" />
   </Folder>
+  <Folder Name="/service/Storage/">
+    <Project Path="src/service/Storage/Contract/Contract.csproj" />
+    <Project Path="src/service/Storage/Api/Api.csproj" />
+  </Folder>
   <Folder Name="/endpoint/" />
-  <Folder Name="/endpoint/ExchangeRate.GetSet/">
-    <Project Path="src/endpoint/ExchangeRate.GetSet/Contract/Contract.csproj" />
-    <Project Path="src/endpoint/ExchangeRate.GetSet/Handler/Handler.csproj" />
+  <Folder Name="/endpoint/CurrentExchangeRate.Get/">
+    <Project Path="src/endpoint/CurrentExchangeRate.Get/Contract/Contract.csproj" />
+    <Project Path="src/endpoint/CurrentExchangeRate.Get/Handler/Handler.csproj" />
+  </Folder>
+  <Folder Name="/endpoint/DailyExchangeRate.Get/">
+    <Project Path="src/endpoint/DailyExchangeRate.Get/Contract/Contract.csproj" />
+    <Project Path="src/endpoint/DailyExchangeRate.Get/Handler/Handler.csproj" />
+  </Folder>
+  <Folder Name="/endpoint/CurrentExchangeRate.Update/">
+    <Project Path="src/endpoint/CurrentExchangeRate.Update/Contract/Contract.csproj" />
+    <Project Path="src/endpoint/CurrentExchangeRate.Update/Handler/Handler.csproj" />
+  </Folder>
+  <Folder Name="/endpoint/DailyExchangeRate.Update/">
+    <Project Path="src/endpoint/DailyExchangeRate.Update/Contract/Contract.csproj" />
+    <Project Path="src/endpoint/DailyExchangeRate.Update/Handler/Handler.csproj" />
   </Folder>
   <Folder Name="/app/">
     <Project Path="src/app/AzureFunc/AzureFunc.csproj" />

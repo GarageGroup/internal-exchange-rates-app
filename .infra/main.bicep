@@ -59,7 +59,7 @@ resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     supportsHttpsTrafficOnly: true
     minimumTlsVersion: 'TLS1_2'
     allowBlobPublicAccess: false
-    allowSharedKeyAccess: false
+    allowSharedKeyAccess: true
     defaultToOAuthAuthentication: true
   }
 }
@@ -116,6 +116,8 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'ExchangeRates__Storage__ServiceUri', value: storage.properties.primaryEndpoints.table }
         { name: 'ExchangeRates__Storage__CurrentRatesTableName', value: 'CurrentRates' }
         { name: 'ExchangeRates__Storage__DailyRatesTableName', value: 'DailyRates' }
+        { name: 'ExchangeRates__CurrentUpdateSchedule', value: '0 */10 * * * *' }
+        { name: 'ExchangeRates__DailyUpdateSchedule', value: '0 0 1 * * *' }
         { name: 'Dataverse__ServiceUrl', value: dataverseServiceUrl }
         { name: 'Dataverse__AuthenticationType', value: 'SystemAssignedManagedIdentity' }
       ]

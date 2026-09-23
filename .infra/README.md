@@ -151,6 +151,9 @@ Managed Identity функции автоматически добавляет в
 | `AZURE_NAME_POSTFIX` | Да | `test` или `prod` |
 | `STORAGE_ACCOUNT_NAME` | Да | Точное имя Storage Account приложения: 3-24 строчные латинские буквы и цифры, например `stintexratestest` |
 | `DATAVERSE_SERVICE_URL` | Да | URL Dataverse без `/` в конце |
+| `EXCHANGE_RATE_CURRENCY_PAIRS` | Да | Пары для timer handlers через `;`: `EUR/USD;EUR/RUB;USD/EUR;USD/RUB;RUB/EUR;RUB/USD` |
+| `CURRENT_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB текущих курсов, например `0 */10 * * * *` |
+| `DAILY_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB дневных курсов, например `0 0 1 * * *` |
 | `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME` | Да | Имя Dataverse-роли для Function Managed Identity; Business Unit определяется по найденной роли |
 | `FUNC_INSTANCE_MEMORY` | Нет | Память Flex instance: `512`, `2048` или `4096`; default `2048` |
 | `FUNC_MAX_INSTANCE_COUNT` | Нет | Максимальное число Flex instances; default `100` |

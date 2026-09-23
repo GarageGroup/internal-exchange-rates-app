@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <RootNamespace>GarageGroup.Internal.ExchangeRates</RootNamespace>
+    <AssemblyName>GarageGroup.Internal.ExchangeRates.Endpoint.CurrentExchangeRate.Update.Contract</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GarageGroup.Infra.Handler.Core" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>
