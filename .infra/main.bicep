@@ -113,7 +113,8 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'AzureWebJobsStorage__accountName', value: storage.name }
         { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }
         { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: insights.properties.ConnectionString }
-        { name: 'ExchangeRates__Storage__ServiceUri', value: storage.properties.primaryEndpoints.table }
+        { name: 'StorageApi__BaseAddress', value: storage.properties.primaryEndpoints.table }
+        { name: 'StorageApi__Timeout', value: '01:00:00' }
         { name: 'ExchangeRates__Storage__CurrentRatesTableName', value: 'CurrentRates' }
         { name: 'ExchangeRates__Storage__DailyRatesTableName', value: 'DailyRates' }
         { name: 'ExchangeRates__CurrentUpdateSchedule', value: '0 */10 * * * *' }

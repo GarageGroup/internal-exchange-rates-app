@@ -25,7 +25,7 @@ internal static partial class Application
         .UseLogging("StorageApi")
         .UseTokenCredentialStandard("https://storage.azure.com/.default")
         .UsePollyStandard()
-        .UseHttpApi()
+        .UseHttpApi("StorageApi")
         .With(
             ResolveStorageOption)
         .UseStorageApi();
@@ -36,9 +36,8 @@ internal static partial class Application
 
         return new()
         {
-            ServiceUri = new Uri(configuration.GetRequiredValue("ExchangeRates:Storage:ServiceUri")),
-            CurrentRatesTableName = configuration.GetRequiredValue("ExchangeRates:Storage:CurrentRatesTableName"),
-            DailyRatesTableName = configuration.GetRequiredValue("ExchangeRates:Storage:DailyRatesTableName")
+            CurrentRatesTableName = configuration.GetRequiredSection("ExchangeRates:Storage:CurrentRatesTableName").Value.OrEmpty(),
+            DailyRatesTableName = configuration.GetRequiredSection("ExchangeRates:Storage:DailyRatesTableName").Value.OrEmpty()
         };
     }
 
@@ -110,15 +109,6 @@ internal static partial class Application
             BaseCurrency = baseCurrency,
             QuoteCurrency = quoteCurrency
         };
-    }
-
-    private static string GetRequiredValue(this IConfiguration configuration, string key)
-    {
-        var value = configuration[key];
-        
-        return string.IsNullOrWhiteSpace(value)
-            ? throw new InvalidOperationException($"Configuration value '{key}' must be specified.")
-            : value;
     }
 
     private sealed record class ConfiguredCurrencyPair

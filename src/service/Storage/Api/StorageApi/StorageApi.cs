@@ -90,8 +90,8 @@ internal sealed partial class StorageApi : IStorageApi
         => 
         DateTimeOffset.Parse(value.OrEmpty(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
 
-    private string BuildEntityUrl(string tableName, string partitionKey, string rowKey)
+    private static string BuildEntityUrl(string tableName, string partitionKey, string rowKey)
         => 
-        $"{option.ServiceUri.AbsoluteUri.TrimEnd('/')}/{tableName}"
+        $"{tableName}"
             + $"(PartitionKey='{Uri.EscapeDataString(partitionKey)}',RowKey='{Uri.EscapeDataString(rowKey)}')";
 }
