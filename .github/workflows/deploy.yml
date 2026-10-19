@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
       skip_apim:
-        description: Skip API Management placeholder
+        description: Skip API Management configuration and OpenAPI import
         type: boolean
         default: false
 
@@ -75,8 +75,8 @@ jobs:
         with:
           inlineScript: az logout
 
-  deploy-apim-placeholder:
-    if: ${{ !inputs.skip_apim }}
+  update-swagger:
+    if: ${{ always() && !cancelled() && !inputs.skip_apim && (needs.deploy-application.result == 'success' || needs.deploy-application.result == 'skipped') }}
     needs: deploy-application
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -89,13 +89,31 @@ jobs:
           client-id: ${{ vars.DEPLOY_CLIENT_ID }}
           tenant-id: ${{ vars.DEPLOY_TENANT_ID }}
           subscription-id: ${{ vars.DEPLOY_SUBSCRIPTION_ID }}
-      - name: Verify APIM placeholder
+      - name: Configure API Management
         uses: azure/cli@v3
         env:
+          APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
           APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
           APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
+          APIM_API_ID: ${{ vars.APIM_API_ID }}
+          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
+          APIM_PRODUCT_ID: ${{ vars.APIM_PRODUCT_ID }}
+          AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
         with:
-          inlineScript: bash ./.infra/scripts/prepare-apim.sh
+          inlineScript: bash ./.infra/scripts/configure-apim.sh
+      - name: Update Swagger
+        uses: azure/cli@v3
+        env:
+          APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
+          APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
+          APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
+          APIM_API_ID: ${{ vars.APIM_API_ID }}
+          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
+          AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+        with:
+          inlineScript: bash ./.infra/scripts/update-swagger.sh
       - name: Azure Logout
         if: ${{ always() }}
         uses: azure/cli@v3

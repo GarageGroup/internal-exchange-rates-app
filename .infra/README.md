@@ -5,7 +5,7 @@
 Для каждой среды нужны две App Registration:
 
 1. **Azure deployment App Registration** — Azure login, установка инфраструктуры,
-   публикация Function и будущее обновление APIM.
+   публикация Function и обновление APIM.
 2. **Dataverse deployment App Registration** — регистрация System Assigned Managed
    Identity функции в Dataverse и назначение ей роли
    `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME`.
@@ -159,6 +159,10 @@ Managed Identity функции автоматически добавляет в
 | `FUNC_MAX_INSTANCE_COUNT` | Нет | Максимальное число Flex instances; default `100` |
 | `APIM_RESOURCE_GROUP` | Да для APIM | Resource group существующего APIM |
 | `APIM_SERVICE_NAME` | Да для APIM | Имя существующего APIM |
+| `APIM_SUBSCRIPTION_ID` | Нет | Subscription существующего APIM; по умолчанию `DEPLOY_SUBSCRIPTION_ID` |
+| `APIM_API_ID` | Да для APIM | Стабильный ID отдельного API, например `exchange-rates-test` / `exchange-rates-prod` |
+| `APIM_API_PATH` | Да для APIM | Уникальный URL prefix без `/` в начале и конце: `exchange-rates-test` / `exchange-rates` |
+| `APIM_PRODUCT_ID` | Да для APIM | ID нового Product: `exchange-rates-test` / `exchange-rates-prod`; не указывайте ID чужого Product |
 
 Environment secrets для приложения не требуются.
 
@@ -168,3 +172,68 @@ Environment secrets для приложения не требуются.
 - `publish.yml` собирает ZIP, загружает его в Blob Storage и разворачивает в `Test`.
 - `deploy.yml` разворачивает выбранную версию в `Test` или `Prod`.
 - `delete.yml` удаляет ZIP релиза из Blob Storage и Git tag.
+
+## APIM: API, Product и update-swagger
+
+`deploy.yml` содержит job `update-swagger`, выполняемый после успешного deployment Function.
+При `skip_deploy=true` он также может обновить уже работающую Function; `skip_apim=true`
+пропускает только настройку APIM. При неудаче deployment Function APIM не обновляется.
+`publish.yml` выполняет те же шаги после автоматического deployment в Test.
+`install.yml` проверяет существующий APIM; API настраивается после публикации кода.
+
+По образцу Production Calendar спецификация `src/app/AzureFunc/Swagger/swagger.json`
+включена в сборку как embedded resource `ExchangeRates.OpenApi.json`. Function выдаёт её
+через защищённый `GET /api/swagger/swagger.json` (`AuthorizationLevel.Function`).
+При изменении HTTP-контрактов актуализируйте этот документ; автоматической генерации
+из C#-контрактов нет. Swagger endpoint не включён в публичный бизнес-API APIM.
+
+`configure-apim.sh` сначала создаёт/обновляет API, policy и Product. Затем
+`update-swagger.sh` получает hostname и ключ Function, скачивает документ по HTTPS
+с `x-functions-key` во временный файл и импортирует его через `az apim api import`.
+Загрузка повторяется при временной недоступности Function после deployment.
+Используется документ из развёрнутого ZIP, а не из checkout runner: rollback не импортирует
+контракты более новой версии. Старые ZIP без Swagger endpoint сначала нужно заменить
+версией с этим endpoint. Общий Swagger API APIM и отдельная подписка для него не нужны.
+Импорт создаёт/обновляет две операции с постоянными operationId:
+
+- `GET /{APIM_API_PATH}/current/{baseCurrency}/{quoteCurrency}`;
+- `GET /{APIM_API_PATH}/daily/{baseCurrency}/{quoteCurrency}/{date}`, дата `yyyy-MM-dd`.
+
+Backend — фактический `defaultHostName` Function с суффиксом `/api/exchange-rates`.
+Спецификация описывает параметры, ответы и ошибки. `configure-apim.sh` применяет
+`.infra/apim/main.bicep`: секретный Named Value `${APIM_API_ID}-function-key`, policy API,
+новый опубликованный Product `Exchange Rates`, привязку API и доступ группы `developers`.
+Существующие общие API, Product и глобальные policies не изменяются.
+
+Клиент использует APIM subscription key (`Ocp-Apim-Subscription-Key`). Product требует
+подписку с одобрением администратора. Подписки пользователей deployment не создаёт.
+APIM передаёт Function ключ в `x-functions-key`, перезаписывая входящий заголовок и
+удаляя входящий параметр `code` и APIM subscription key из запроса к backend.
+Используется `functionKeys.default` — host-level ключ
+вызова функций, не административный `_master`. Ключ извлекается из Azure при запуске,
+маскируется в Actions, передаётся в Bicep через временный файл и `@secure()` параметр.
+После ротации ключа повторите шаги APIM. Новые GitHub secrets для него не требуются.
+
+Методы появляются в Developer Portal из импортированного API; доступность зависит от
+группы пользователя и подписки Product. Уже опубликованный портал не перепубликуется
+этим workflow: оформление и публикация общего портала остаются отдельным действием.
+
+### Дополнительные права deployment principal
+
+Роль на одном ресурсе APIM из скрипта выше позволяет управлять APIM, но для
+`az deployment group create` также нужны права на ARM deployments в его resource group.
+Администратор может назначить `Contributor` на RG APIM (или ограниченную custom role
+с правами `Microsoft.Resources/deployments/*` и чтением RG в дополнение к существующей
+`API Management Service Contributor` на APIM). Назначение `Contributor` разрешает
+управление всей RG, поэтому при общей RG предпочтительна ограниченная custom role.
+
+```shell
+az role assignment create \
+  --assignee "$AZURE_DEPLOY_APP_ID" \
+  --role "Contributor" \
+  --scope "/subscriptions/$APIM_SUB_ID/resourceGroups/$APIM_RG"
+```
+
+На RG Function ранее выданного `Contributor` достаточно для чтения hostname и ключей.
+Повторные запуски используют те же API/Product/Named Value и не создают подписки-дубли.
+Изменение ID означает создание другого ресурса; старый API/Product автоматически не удаляется.

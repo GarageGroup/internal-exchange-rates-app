@@ -51,6 +51,7 @@ jobs:
       - name: Verify existing APIM
         uses: azure/cli@v3
         env:
+          APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
           APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
           APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
         with:

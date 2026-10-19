@@ -1,0 +1,269 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Exchange Rates API",
+    "version": "1.0.0"
+  },
+  "security": [
+    {
+      "subscriptionKey": []
+    }
+  ],
+  "paths": {
+    "/current/{baseCurrency}/{quoteCurrency}": {
+      "get": {
+        "operationId": "GetCurrentExchangeRate",
+        "summary": "Get latest stored exchange rate",
+        "description": "Returns the latest stored provider rate. This may be a daily rate rather than an intraday quote.",
+        "parameters": [
+          {
+            "name": "baseCurrency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$",
+              "example": "USD"
+            }
+          },
+          {
+            "name": "quoteCurrency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$",
+              "example": "EUR"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exchange rate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentRate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid currency pair or date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "APIM subscription key is missing or invalid"
+          },
+          "404": {
+            "description": "Exchange rate not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/daily/{baseCurrency}/{quoteCurrency}/{date}": {
+      "get": {
+        "operationId": "GetDailyExchangeRate",
+        "summary": "Get daily exchange rate on or before a date",
+        "description": "Returns the nearest available rate on or before the requested date. effectiveDate identifies the returned rate date.",
+        "parameters": [
+          {
+            "name": "baseCurrency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$",
+              "example": "USD"
+            }
+          },
+          {
+            "name": "quoteCurrency",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z]{3}$",
+              "example": "EUR"
+            }
+          },
+          {
+            "name": "date",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2026-10-18"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exchange rate",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyRate"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid currency pair or date",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "APIM subscription key is missing or invalid"
+          },
+          "404": {
+            "description": "Exchange rate not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "subscriptionKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Ocp-Apim-Subscription-Key"
+      }
+    },
+    "schemas": {
+      "CurrentRate": {
+        "type": "object",
+        "required": [
+          "baseCurrency",
+          "quoteCurrency",
+          "rate",
+          "source",
+          "effectiveDate",
+          "fetchedAtUtc"
+        ],
+        "properties": {
+          "baseCurrency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "quoteCurrency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "rate": {
+            "type": "number",
+            "description": "Decimal exchange rate in the response; stored as string in Table Storage."
+          },
+          "source": {
+            "type": "string",
+            "example": "Frankfurter"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "fetchedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DailyRate": {
+        "type": "object",
+        "required": [
+          "baseCurrency",
+          "quoteCurrency",
+          "rate",
+          "source",
+          "effectiveDate",
+          "fetchedAtUtc"
+        ],
+        "properties": {
+          "baseCurrency": {
+            "type": "string",
+            "example": "USD"
+          },
+          "quoteCurrency": {
+            "type": "string",
+            "example": "EUR"
+          },
+          "rate": {
+            "type": "number",
+            "description": "Decimal exchange rate in the response; stored as string in Table Storage."
+          },
+          "source": {
+            "type": "string",
+            "example": "Frankfurter"
+          },
+          "effectiveDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "fetchedAtUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

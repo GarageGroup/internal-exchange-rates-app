@@ -103,6 +103,31 @@ jobs:
           DAILY_RATE_UPDATE_SCHEDULE: ${{ vars.DAILY_RATE_UPDATE_SCHEDULE }}
         with:
           inlineScript: bash ./.infra/scripts/set-function-app-settings.sh
+      - name: Configure API Management
+        uses: azure/cli@v3
+        env:
+          APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
+          APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
+          APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
+          APIM_API_ID: ${{ vars.APIM_API_ID }}
+          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
+          APIM_PRODUCT_ID: ${{ vars.APIM_PRODUCT_ID }}
+          AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+        with:
+          inlineScript: bash ./.infra/scripts/configure-apim.sh
+      - name: Update Swagger
+        uses: azure/cli@v3
+        env:
+          APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
+          APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
+          APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
+          APIM_API_ID: ${{ vars.APIM_API_ID }}
+          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
+          AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+          AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
+        with:
+          inlineScript: bash ./.infra/scripts/update-swagger.sh
       - name: Azure Logout
         if: ${{ always() }}
         uses: azure/cli@v3
