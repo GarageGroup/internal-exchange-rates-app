@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required=(APIM_RESOURCE_GROUP APIM_SERVICE_NAME APIM_API_ID APIM_API_PATH APIM_PRODUCT_ID AZURE_RESOURCE_GROUP_NAME AZURE_FUNCTION_NAME)
+required=(APIM_RESOURCE_GROUP APIM_SERVICE_NAME AZURE_RESOURCE_GROUP_NAME AZURE_FUNCTION_NAME AZURE_NAME_POSTFIX)
 for variable in "${required[@]}"; do
   [[ -n "${!variable:-}" ]] || { echo "Missing $variable" >&2; exit 1; }
 done
+[[ "$AZURE_NAME_POSTFIX" =~ ^(test|prod)$ ]] || { echo 'AZURE_NAME_POSTFIX must be test or prod' >&2; exit 1; }
+api_name="exchange-rates-$AZURE_NAME_POSTFIX"
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 function_subscription="$(az account show --query id --output tsv --only-show-errors)"
@@ -23,18 +25,18 @@ parameters_file="$(mktemp)"
 trap 'rm -f "$parameters_file"' EXIT
 # Pass the secret through stdin, not command-line arguments or deployment outputs.
 printf '%s' "$function_key" | jq -Rs \
-  --arg service "$APIM_SERVICE_NAME" --arg api "$APIM_API_ID" --arg path "$APIM_API_PATH" \
-  --arg product "$APIM_PRODUCT_ID" --arg backend "https://${hostname}/api/exchange-rates" \
+  --arg service "$APIM_SERVICE_NAME" --arg api "$api_name" --arg path "$api_name" \
+  --arg product "$api_name" --arg backend "https://${hostname}/api/exchange-rates" \
   '{parameters: {apimServiceName: {value: $service}, apiId: {value: $api}, apiPath: {value: $path}, productId: {value: $product}, backendServiceUrl: {value: $backend}, functionKey: {value: .}}}' > "$parameters_file"
 unset function_key
 
 az deployment group create \
   --subscription "$apim_subscription" \
   --resource-group "$APIM_RESOURCE_GROUP" \
-  --name "${APIM_API_ID}-configuration" \
+  --name "${api_name}-configuration" \
   --mode Incremental \
   --template-file "$script_dir/../apim/main.bicep" \
   --parameters "@$parameters_file" \
   --output none --only-show-errors
 
-echo "APIM API '$APIM_API_ID' configured in product '$APIM_PRODUCT_ID'."
+echo "APIM API '$api_name' configured in product '$api_name'."

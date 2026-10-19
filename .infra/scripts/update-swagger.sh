@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-required=(APIM_RESOURCE_GROUP APIM_SERVICE_NAME APIM_API_ID APIM_API_PATH AZURE_RESOURCE_GROUP_NAME AZURE_FUNCTION_NAME)
+required=(APIM_RESOURCE_GROUP APIM_SERVICE_NAME AZURE_RESOURCE_GROUP_NAME AZURE_FUNCTION_NAME AZURE_NAME_POSTFIX)
 for variable in "${required[@]}"; do
   [[ -n "${!variable:-}" ]] || { echo "Missing $variable" >&2; exit 1; }
 done
+[[ "$AZURE_NAME_POSTFIX" =~ ^(test|prod)$ ]] || { echo 'AZURE_NAME_POSTFIX must be test or prod' >&2; exit 1; }
+api_name="exchange-rates-$AZURE_NAME_POSTFIX"
 
 function_subscription="$(az account show --query id --output tsv --only-show-errors)"
 apim_subscription="${APIM_SUBSCRIPTION_ID:-$function_subscription}"
@@ -32,9 +34,9 @@ az apim api import \
   --subscription "$apim_subscription" \
   --resource-group "$APIM_RESOURCE_GROUP" \
   --service-name "$APIM_SERVICE_NAME" \
-  --api-id "$APIM_API_ID" \
-  --display-name 'Exchange Rates API' \
-  --path "$APIM_API_PATH" \
+  --api-id "$api_name" \
+  --display-name "Exchange Rates ($AZURE_NAME_POSTFIX)" \
+  --path "$api_name" \
   --service-url "https://${hostname}/api/exchange-rates" \
   --protocols https \
   --subscription-required true \
@@ -42,4 +44,4 @@ az apim api import \
   --specification-path "$specification" \
   --output none --only-show-errors
 
-echo "OpenAPI imported into APIM API '$APIM_API_ID'."
+echo "OpenAPI imported into APIM API '$api_name'."

@@ -1,5 +1,13 @@
 # Журнал изменений инфраструктуры
 
+## 19.10.2026 — Автоматическое именование API и Product
+
+- По замечанию пользователя повторно изучены prepare-apim.sh/update-swagger.sh Production Calendar: имя API, путь и Product там вычисляются по среде, а не запрашиваются отдельными переменными GitHub.
+- В ExchangeRates удалены APIM_API_ID, APIM_API_PATH, APIM_PRODUCT_ID из workflow и обязательных входов скриптов. configure-apim/update-swagger используют `exchange-rates-$AZURE_NAME_POSTFIX`; postfix проверяется на test/prod. Product создаётся автоматически с тем же ID. Уже существующие APIM_RESOURCE_GROUP/APIM_SERVICE_NAME и общие переменные deployment достаточны.
+- README актуализирован; уточнена достаточная роль API Management Service Contributor на RG APIM. Пользователь сообщил, что администратор уже выдал права; новое назначение не выполнялось и не проверялось в Azure.
+- Проверки: bash -n обоих скриптов, разбор workflow PyYAML и git diff --check прошли; ссылки на удалённые переменные в workflow/скриптах отсутствуют. C# и Bicep не менялись, сборка не повторялась. Тесты не создавались.
+- Review: пользователь одобрил исправление командой «коммить» 19.10.2026. Изменения включаются в коммит автоматического именования; хеш фиксируется в координационном CURRENT_STATE.md. Push и deployment не выполняются. Предыдущая реализация APIM/Swagger сохранена в a234993.
+
 ## 19.10.2026 — Exchange Rates API в существующем APIM
 
 - Запрос пользователя в чате ExchangeRates: отдельный API и новый Product, шаг CI/CD по образцу Timesheet `update-swagger`, доступ к Function по ключу.

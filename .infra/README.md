@@ -160,9 +160,6 @@ Managed Identity функции автоматически добавляет в
 | `APIM_RESOURCE_GROUP` | Да для APIM | Resource group существующего APIM |
 | `APIM_SERVICE_NAME` | Да для APIM | Имя существующего APIM |
 | `APIM_SUBSCRIPTION_ID` | Нет | Subscription существующего APIM; по умолчанию `DEPLOY_SUBSCRIPTION_ID` |
-| `APIM_API_ID` | Да для APIM | Стабильный ID отдельного API, например `exchange-rates-test` / `exchange-rates-prod` |
-| `APIM_API_PATH` | Да для APIM | Уникальный URL prefix без `/` в начале и конце: `exchange-rates-test` / `exchange-rates` |
-| `APIM_PRODUCT_ID` | Да для APIM | ID нового Product: `exchange-rates-test` / `exchange-rates-prod`; не указывайте ID чужого Product |
 
 Environment secrets для приложения не требуются.
 
@@ -174,6 +171,13 @@ Environment secrets для приложения не требуются.
 - `delete.yml` удаляет ZIP релиза из Blob Storage и Git tag.
 
 ## APIM: API, Product и update-swagger
+
+Как в Production Calendar, ID API, URL prefix и ID нового Product вычисляются из
+существующего `AZURE_NAME_POSTFIX`: `exchange-rates-test` или `exchange-rates-prod`.
+Product создаёт Bicep; искать его ID или создавать Product вручную не нужно.
+Переменные `APIM_API_ID`, `APIM_API_PATH`, `APIM_PRODUCT_ID` не используются.
+Для Test достаточно уже заполненных `APIM_RESOURCE_GROUP`, `APIM_SERVICE_NAME`
+и общих deployment-переменных. `APIM_SUBSCRIPTION_ID` нужен только при другой subscription APIM.
 
 `deploy.yml` содержит job `update-swagger`, выполняемый после успешного deployment Function.
 При `skip_deploy=true` он также может обновить уже работающую Function; `skip_apim=true`
@@ -196,12 +200,12 @@ Environment secrets для приложения не требуются.
 версией с этим endpoint. Общий Swagger API APIM и отдельная подписка для него не нужны.
 Импорт создаёт/обновляет две операции с постоянными operationId:
 
-- `GET /{APIM_API_PATH}/current/{baseCurrency}/{quoteCurrency}`;
-- `GET /{APIM_API_PATH}/daily/{baseCurrency}/{quoteCurrency}/{date}`, дата `yyyy-MM-dd`.
+- `GET /exchange-rates-{test|prod}/current/{baseCurrency}/{quoteCurrency}`;
+- `GET /exchange-rates-{test|prod}/daily/{baseCurrency}/{quoteCurrency}/{date}`, дата `yyyy-MM-dd`.
 
 Backend — фактический `defaultHostName` Function с суффиксом `/api/exchange-rates`.
 Спецификация описывает параметры, ответы и ошибки. `configure-apim.sh` применяет
-`.infra/apim/main.bicep`: секретный Named Value `${APIM_API_ID}-function-key`, policy API,
+`.infra/apim/main.bicep`: секретный Named Value `exchange-rates-{test|prod}-function-key`, policy API,
 новый опубликованный Product `Exchange Rates`, привязку API и доступ группы `developers`.
 Существующие общие API, Product и глобальные policies не изменяются.
 
@@ -222,15 +226,14 @@ APIM передаёт Function ключ в `x-functions-key`, перезапис
 
 Роль на одном ресурсе APIM из скрипта выше позволяет управлять APIM, но для
 `az deployment group create` также нужны права на ARM deployments в его resource group.
-Администратор может назначить `Contributor` на RG APIM (или ограниченную custom role
-с правами `Microsoft.Resources/deployments/*` и чтением RG в дополнение к существующей
-`API Management Service Contributor` на APIM). Назначение `Contributor` разрешает
-управление всей RG, поэтому при общей RG предпочтительна ограниченная custom role.
+Достаточно назначить `API Management Service Contributor` на RG APIM: роль включает
+`Microsoft.Resources/deployments/*` и чтение resource group. Ранее назначенная роль
+на одном APIM сохраняется. Более широкая роль `Contributor` не требуется.
 
 ```shell
 az role assignment create \
   --assignee "$AZURE_DEPLOY_APP_ID" \
-  --role "Contributor" \
+  --role "API Management Service Contributor" \
   --scope "/subscriptions/$APIM_SUB_ID/resourceGroups/$APIM_RG"
 ```
 

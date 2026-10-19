@@ -109,9 +109,7 @@ jobs:
           APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
           APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
           APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
-          APIM_API_ID: ${{ vars.APIM_API_ID }}
-          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
-          APIM_PRODUCT_ID: ${{ vars.APIM_PRODUCT_ID }}
+          AZURE_NAME_POSTFIX: ${{ vars.AZURE_NAME_POSTFIX }}
           AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
           AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
         with:
@@ -122,8 +120,7 @@ jobs:
           APIM_SUBSCRIPTION_ID: ${{ vars.APIM_SUBSCRIPTION_ID }}
           APIM_RESOURCE_GROUP: ${{ vars.APIM_RESOURCE_GROUP }}
           APIM_SERVICE_NAME: ${{ vars.APIM_SERVICE_NAME }}
-          APIM_API_ID: ${{ vars.APIM_API_ID }}
-          APIM_API_PATH: ${{ vars.APIM_API_PATH }}
+          AZURE_NAME_POSTFIX: ${{ vars.AZURE_NAME_POSTFIX }}
           AZURE_RESOURCE_GROUP_NAME: rg-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
           AZURE_FUNCTION_NAME: func-${{ vars.AZURE_NAME_ROOT }}-${{ vars.AZURE_NAME_POSTFIX }}
         with:
