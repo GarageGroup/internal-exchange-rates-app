@@ -206,7 +206,8 @@ Product создаёт Bicep; искать его ID или создавать P
 Backend — фактический `defaultHostName` Function с суффиксом `/api/exchange-rates`.
 Спецификация описывает параметры, ответы и ошибки. `configure-apim.sh` применяет
 `.infra/apim/main.bicep`: секретный Named Value `exchange-rates-{test|prod}-function-key`, policy API,
-новый опубликованный Product `Exchange Rates`, привязку API и доступ группы `developers`.
+новый опубликованный Product `Garage Exchange Rates`, привязку API и доступ группы `developers`.
+Отображаемое имя API — `Exchange Rates`, без суффикса среды; ID и URL сохраняют test/prod.
 Существующие общие API, Product и глобальные policies не изменяются.
 
 Клиент использует APIM subscription key (`Ocp-Apim-Subscription-Key`). Product требует

@@ -35,7 +35,7 @@ az apim api import \
   --resource-group "$APIM_RESOURCE_GROUP" \
   --service-name "$APIM_SERVICE_NAME" \
   --api-id "$api_name" \
-  --display-name "Exchange Rates ($AZURE_NAME_POSTFIX)" \
+  --display-name 'Exchange Rates' \
   --path "$api_name" \
   --service-url "https://${hostname}/api/exchange-rates" \
   --protocols https \

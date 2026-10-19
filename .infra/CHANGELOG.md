@@ -1,5 +1,11 @@
 # Журнал изменений инфраструктуры
 
+## 19.10.2026 — Отображаемые названия APIM
+
+- По запросу пользователя API называется `Exchange Rates` без суффикса среды, Product — `Garage Exchange Rates`.
+- Обновлены displayName в Bicep и display-name импорта Swagger. ID ресурсов и URL не изменены.
+- Проверки: Bicep build, bash -n update-swagger и diff check прошли. Пользователь подтвердил отсутствие суффиксов в Test и Prod и одобрил коммит 19.10.2026. Хеш фиксируется в координационном CURRENT_STATE.md; push и deployment не выполняются.
+
 ## 19.10.2026 — Исправление получения hostname Flex Function
 
 - Пользователь сообщил об ошибке CI/CD `Function hostname was not found` в Azure CLI 2.91.0.

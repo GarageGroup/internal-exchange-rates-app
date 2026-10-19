@@ -16,7 +16,7 @@ resource api 'Microsoft.ApiManagement/service/apis@2024-05-01' = {
   parent: apim
   name: apiId
   properties: {
-    displayName: 'Exchange Rates API'
+    displayName: 'Exchange Rates'
     description: 'Current and historical exchange rates.'
     path: apiPath
     protocols: ['https']
@@ -48,7 +48,7 @@ resource product 'Microsoft.ApiManagement/service/products@2024-05-01' = {
   parent: apim
   name: productId
   properties: {
-    displayName: 'Exchange Rates'
+    displayName: 'Garage Exchange Rates'
     description: 'Current and historical exchange rates.'
     subscriptionRequired: true
     approvalRequired: true
