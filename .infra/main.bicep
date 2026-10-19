@@ -12,8 +12,6 @@ param environmentName string
 @maxLength(24)
 param storageAccountName string
 
-param dataverseServiceUrl string
-
 @allowed([512, 2048, 4096])
 param instanceMemoryMB int = 2048
 
@@ -119,8 +117,6 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'ExchangeRates__Storage__DailyRatesTableName', value: 'DailyRates' }
         { name: 'ExchangeRates__CurrentUpdateSchedule', value: '0 */10 * * * *' }
         { name: 'ExchangeRates__DailyUpdateSchedule', value: '0 0 1 * * *' }
-        { name: 'Dataverse__ServiceUrl', value: dataverseServiceUrl }
-        { name: 'Dataverse__AuthenticationType', value: 'SystemAssignedManagedIdentity' }
       ]
     }
     functionAppConfig: {

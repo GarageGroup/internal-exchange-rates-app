@@ -2,19 +2,14 @@
 
 ## App Registrations
 
-Для каждой среды нужны две App Registration:
-
-1. **Azure deployment App Registration** — Azure login, установка инфраструктуры,
-   публикация Function и обновление APIM.
-2. **Dataverse deployment App Registration** — регистрация System Assigned Managed
-   Identity функции в Dataverse и назначение ей роли
-   `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME`.
-
-Всего нужно четыре App Registration: по две для `Test` и `Prod`. Для самой Azure
-Function App Registration не нужна: она работает через `SystemAssignedManagedIdentity`.
-Client secrets также не нужны — GitHub Actions использует OIDC.
+Для каждой среды нужна одна Azure deployment App Registration: установка инфраструктуры,
+публикация Function и настройка APIM. Всего две — для Test и Prod.
+Function использует SystemAssignedManagedIdentity для Storage. GitHub Actions — OIDC,
+client secrets не нужны. Интеграция с Dataverse удалена: сервис его не использует.
 
 ## Shell-скрипт выдачи прав
+
+Для Prod заполненный shell-блок выдан администратору в чате. Он создаёт RG приложения при отсутствии, регистрирует providers, настраивает GitHub OIDC для Prod и назначает Contributor/RBAC Administrator на RG приложения и API Management Service Contributor на RG APIM в отдельной subscription. Повторный запуск поддерживается; deployment не выполняется.
 
 Администратор должен заполнить и выполнить этот скрипт отдельно для `Test` и `Prod`.
 Перед запуском нужно выполнить `az login`.
@@ -25,7 +20,6 @@ set -eu
 
 # Заполнить перед запуском.
 AZURE_DEPLOY_APP_ID="<azure-deployment-app-registration-client-id>"
-DATAVERSE_DEPLOY_APP_ID="<dataverse-deployment-app-registration-client-id>"
 SUB_ID="<subscription-id>"
 RG="rg-internal-exchange-rates-test"
 
@@ -37,10 +31,7 @@ ENVIRONMENT_NAME="test"   # test или prod
 # Существующий APIM находится в другой resource group.
 APIM_SUB_ID="$SUB_ID"
 APIM_RG="<existing-apim-resource-group>"
-APIM_NAME="<existing-apim-name>"
 
-GRAPH_API_ID="00000003-0000-0000-c000-000000000000"
-APPLICATION_READ_ALL_ROLE_ID="9a5d68dd-52b0-4cc2-bd40-abcf44ac3a30"
 
 # 1. GitHub OIDC для Azure deployment App Registration.
 cat > azure-deploy-federated-credential.json <<EOF
@@ -72,54 +63,20 @@ az role assignment create \
   --scope "$APP_RG_SCOPE"
 
 # 3. Доступ к существующему APIM.
-APIM_SCOPE="/subscriptions/$APIM_SUB_ID/resourceGroups/$APIM_RG/providers/Microsoft.ApiManagement/service/$APIM_NAME"
+APIM_SCOPE="/subscriptions/$APIM_SUB_ID/resourceGroups/$APIM_RG"
 
 az role assignment create \
   --assignee "$AZURE_DEPLOY_APP_ID" \
   --role "API Management Service Contributor" \
   --scope "$APIM_SCOPE"
 
-# 4. GitHub OIDC для Dataverse deployment App Registration.
-cat > dataverse-deploy-federated-credential.json <<EOF
-{
-  "name": "github-${GITHUB_REPO}-${ENVIRONMENT_NAME}",
-  "issuer": "https://token.actions.githubusercontent.com",
-  "subject": "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:${GITHUB_ENVIRONMENT}",
-  "audiences": ["api://AzureADTokenExchange"]
-}
-EOF
-
-az ad app federated-credential create \
-  --id "$DATAVERSE_DEPLOY_APP_ID" \
-  --parameters @dataverse-deploy-federated-credential.json
-
-# 5. Microsoft Graph Application.Read.All для поиска client ID
-# Function Managed Identity по её principal ID.
-az ad app permission add \
-  --id "$DATAVERSE_DEPLOY_APP_ID" \
-  --api "$GRAPH_API_ID" \
-  --api-permissions "${APPLICATION_READ_ALL_ROLE_ID}=Role"
-
-az ad app permission admin-consent \
-  --id "$DATAVERSE_DEPLOY_APP_ID"
-
 rm -f azure-deploy-federated-credential.json
-rm -f dataverse-deploy-federated-credential.json
 ```
 
-Пользователь, выполняющий скрипт, должен иметь права на federated credentials и
-Microsoft Graph admin consent, а также `Owner` либо сочетание `User Access
-Administrator` и `Contributor` на указанных Azure scopes.
-
-Dataverse deployment App Registration нужно вручную добавить в каждую среду
-Dataverse как **Application User**. Она должна иметь роль, разрешающую читать
-`systemuser`, `role`, `businessunit`, создавать Application User и назначать ему
-security role. Пока отдельная ограниченная роль не подготовлена, можно использовать
-`System Administrator`. Это настройка Dataverse-среды, а не Azure RBAC.
-
-Managed Identity функции автоматически добавляет в Dataverse workflow `install.yml`.
-Ей назначается прикладная роль с именем из
-`DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME`.
+Пользователь, выполняющий скрипт, должен иметь права на federated credentials
+и назначение Azure RBAC на указанных scopes. Graph Application.Read.All и Dataverse-роли
+этому проекту не требуются. Для APIM роль назначается на его resource group,
+чтобы разрешить также ARM deployments.
 
 ## GitHub repository variables и secret
 
@@ -138,6 +95,61 @@ Managed Identity функции автоматически добавляет в
 
 ## GitHub Environment variables
 
+После удаления интеграции из GitHub Environments можно удалить старые переменные:
+`DEPLOY_DATAVERSE_CLIENT_ID`, `DEPLOY_DATAVERSE_TENANT_ID`, `DATAVERSE_SERVICE_URL`,
+`DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME`. Текущие workflow их не читают.
+
+### Очистка ранее выданного доступа Dataverse
+
+Изменения репозитория не отзывают ранее выданные роли. Администратору Dataverse нужно
+найти Application User Managed Identity этой Function и снять `System Administrator`
+и остальные роли, выданные только для ExchangeRates; при отсутствии другого назначения
+деактивировать Application User. Аналогично проверить Application User бывшего
+Dataverse deployment-приложения. Не изменять Azure deployment-приложение и Managed
+Identity Function: они продолжают использоваться для Azure и Storage.
+
+Если Dataverse deployment App Registration выделена только для ExchangeRates,
+администратор может отключить её и отозвать прежний Microsoft Graph Application.Read.All
+и GitHub federated credential. Сначала проверить зависимости других решений;
+автоматического удаления App Registration или общих прав deployment не выполняет.
+
+Следующий deploy удалит `Dataverse__ServiceUrl` и `Dataverse__AuthenticationType`
+из настроек Function. Старые Application Users и их роли этим шагом не изменяются.
+
+### Актуальные переменные
+
+19.10.2026 создан GitHub Environment `Prod` и заполнены следующие значения:
+
+| Переменная | Prod |
+| --- | --- |
+| `APIM_RESOURCE_GROUP` | `rg-integration-platform-prod` |
+| `APIM_SERVICE_NAME` | `apim-garage-integration-platform-prod` |
+| `APIM_SUBSCRIPTION_ID` | `12495afb-c46a-4d23-9e80-3a1dae5406ff` |
+| `DEPLOY_CLIENT_ID` | `a1f416d9-7138-4022-8efd-9ea9c1d5215b` |
+| `DEPLOY_TENANT_ID` | `69879a40-68bb-4b30-941b-eb9692ddd9b4` |
+| `DEPLOY_SUBSCRIPTION_ID` | `106dd084-8190-453f-87c9-cd2cb714b1d6` |
+| `AZURE_NAME_ROOT` | `exchange-rates` |
+| `AZURE_NAME_POSTFIX` | `prod` |
+| `STORAGE_ACCOUNT_NAME` | `stexchangeratesprod` |
+| `EXCHANGE_RATE_CURRENCY_PAIRS` | `EUR/USD;EUR/RUB;USD/EUR;USD/RUB;RUB/EUR;RUB/USD` |
+| `CURRENT_RATE_UPDATE_SCHEDULE` | `0 */10 * * * *` |
+| `DAILY_RATE_UPDATE_SCHEDULE` | `0 0 1 * * *` |
+| `FUNC_INSTANCE_MEMORY` | `2048` |
+| `FUNC_MAX_INSTANCE_COUNT` | `100` |
+
+Function/RG: `func-exchange-rates-prod`, `rg-exchange-rates-prod`; регион `northeurope`.
+API, URL prefix и Product ID: `exchange-rates-prod`. В обоих subscriptions проверен
+одинаковый tenant; APIM найден, имя Storage было свободно на момент проверки.
+`APIM_SUBSCRIPTION_ID` уже поддерживается verify/configure/update-swagger и workflow:
+выбор subscription Function не меняется, APIM-команды получают отдельный `--subscription`.
+
+Общие artifact-переменные и secret остаются на уровне repository/organization, как для Test.
+Список organization variables текущему GitHub-токену недоступен (403), их значения и
+доступность для workflow в этой проверке не подтверждались. Секреты не считывались.
+Новые Prod secrets не создавались. Сначала администратор выдаёт права, затем после
+коммита/push изменений без Dataverse запускаются `install` Prod и `deploy` нужной версии.
+GitHub Environment настроен, но Prod deployment пока не выполнен.
+
 Создать Environments с точными именами `Test` и `Prod`. В каждом задать свои значения:
 
 | Имя | Обязательно | Назначение |
@@ -145,16 +157,12 @@ Managed Identity функции автоматически добавляет в
 | `DEPLOY_CLIENT_ID` | Да | Client ID Azure deployment App Registration |
 | `DEPLOY_TENANT_ID` | Да | Tenant ID для Azure OIDC login |
 | `DEPLOY_SUBSCRIPTION_ID` | Да | Subscription ID среды |
-| `DEPLOY_DATAVERSE_CLIENT_ID` | Да | Client ID Dataverse deployment App Registration |
-| `DEPLOY_DATAVERSE_TENANT_ID` | Да | Tenant ID для Dataverse OIDC login |
 | `AZURE_NAME_ROOT` | Да | Общая часть имён, например `internal-exchange-rates` |
 | `AZURE_NAME_POSTFIX` | Да | `test` или `prod` |
 | `STORAGE_ACCOUNT_NAME` | Да | Точное имя Storage Account приложения: 3-24 строчные латинские буквы и цифры, например `stintexratestest` |
-| `DATAVERSE_SERVICE_URL` | Да | URL Dataverse без `/` в конце |
 | `EXCHANGE_RATE_CURRENCY_PAIRS` | Да | Пары для timer handlers через `;`: `EUR/USD;EUR/RUB;USD/EUR;USD/RUB;RUB/EUR;RUB/USD` |
 | `CURRENT_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB текущих курсов, например `0 */10 * * * *` |
 | `DAILY_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB дневных курсов, например `0 0 1 * * *` |
-| `DATAVERSE_DEPLOY_PRINCIPAL_ROLE_NAME` | Да | Имя Dataverse-роли для Function Managed Identity; Business Unit определяется по найденной роли |
 | `FUNC_INSTANCE_MEMORY` | Нет | Память Flex instance: `512`, `2048` или `4096`; default `2048` |
 | `FUNC_MAX_INSTANCE_COUNT` | Нет | Максимальное число Flex instances; default `100` |
 | `APIM_RESOURCE_GROUP` | Да для APIM | Resource group существующего APIM |
@@ -165,7 +173,7 @@ Environment secrets для приложения не требуются.
 
 ## Workflow
 
-- `install.yml` создаёт/обновляет инфраструктуру и настраивает Dataverse Application User.
+- `install.yml` создаёт/обновляет инфраструктуру без обращения к Dataverse.
 - `publish.yml` собирает ZIP, загружает его в Blob Storage и разворачивает в `Test`.
 - `deploy.yml` разворачивает выбранную версию в `Test` или `Prod`.
 - `delete.yml` удаляет ZIP релиза из Blob Storage и Git tag.

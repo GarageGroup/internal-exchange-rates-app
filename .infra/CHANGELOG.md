@@ -1,5 +1,24 @@
 # Журнал изменений инфраструктуры
 
+## 19.10.2026 — Подготовка GitHub Environment Prod
+
+- Пользователь разрешил заполнить GitHub variables и указал Prod APIM RG/service, deployment client ID и отдельную APIM subscription. Создан Environment Prod, записаны и прочитаны обратно 14 environment variables; фактические значения перечислены в README.
+- Read-only Azure: обе subscriptions находятся в tenant 69879a40-68bb-4b30-941b-eb9692ddd9b4, Prod APIM существует в North Europe. Имя stexchangeratesprod свободно. Имя Storage, root/postfix, расписания, валюты и Flex defaults выбраны исполнителем по conventions Test; отдельный APIM_SUBSCRIPTION_ID уже поддерживался, дополнительных изменений workflow для cross-subscription не понадобилось.
+- Первоначально подготовлен PowerShell-скрипт; по уточнению пользователя заменён shell-блоком в чате, файл удалён перед коммитом. Скрипт включает: проверка APIM, создание RG приложения при отсутствии, регистрация providers, RBAC и upsert GitHub OIDC. Runtime ресурсы и release не разворачивает.
+- Проверки: PowerShell AST parser без ошибок; параметры federated-credential update сверены с установленным Azure CLI; git diff --check. Скрипт администратора не выполнялся, права не выдавались.
+- Ограничение: organization variables/secrets не доступны для проверки текущему GitHub-токену (403 на список variables); существующие общие настройки artifacts не изменены. Чтение secret values не выполнялось. Изменения удаления Dataverse сохранены в рабочем дереве, не одобрены автоматически подготовкой Prod.
+- Статус: GitHub Prod variables применены по прямому запросу пользователя. Пользователь одобрил локальные изменения командой «коммить» 19.10.2026; они включаются в коммит, хеш фиксируется в координационном CURRENT_STATE.md. Push/CI/CD/Prod deployment агент не выполняет.
+
+## 19.10.2026 — Удаление неиспользуемой интеграции Dataverse
+
+- Пользователь решил отказаться от Dataverse: текущий runtime использует только провайдера курсов и Azure Table Storage. Проверка src не обнаружила обращений к Dataverse.
+- Удалены install job grant-dataverse-access, input skip_dataverse, скрипт регистрации Application User, Dataverse env workflow, параметр/настройки Bicep и обязательные переменные shell-скриптов. Локальные настройки очищены без переноса секретов в документы/Git.
+- set-function-app-settings.sh при следующем deploy удаляет два старых Dataverse app settings. Azure Managed Identity и Storage RBAC сохранены.
+- README: одна Azure deployment App Registration на среду; удалены Dataverse/Graph admin-consent команды. Документированы четыре ненужные GitHub variables и отдельная очистка Application Users, ролей и выделенной Dataverse deployment App Registration администратором.
+- Read-only проверка Azure: у Test пока присутствуют Dataverse__ServiceUrl и Dataverse__AuthenticationType. Выданные роли Dataverse не проверены/не сняты; GitHub variables и внешние ресурсы агент не изменял. Удаление кода не означает отзыв доступа.
+- Проверки: Bicep build main, bash -n обоих изменённых скриптов, разбор workflow PyYAML и diff check прошли. C# не менялся, сборка не повторялась, тесты не создавались.
+- Статус: пользователь одобрил коммит 19.10.2026; push и deployment агент не выполняет. Следующий шаг после публикации — deploy и отдельная административная очистка неиспользуемого Dataverse-доступа.
+
 ## 19.10.2026 — Отображаемые названия APIM
 
 - По запросу пользователя API называется `Exchange Rates` без суффикса среды, Product — `Garage Exchange Rates`.

@@ -5,7 +5,6 @@ required_env_vars=(
   AZURE_RESOURCE_GROUP_NAME
   AZURE_FUNCTION_NAME
   AZURE_STORAGE_ACCOUNT_NAME
-  DATAVERSE_SERVICE_URL
   EXCHANGE_RATE_CURRENCY_PAIRS
   CURRENT_RATE_UPDATE_SCHEDULE
   DAILY_RATE_UPDATE_SCHEDULE
@@ -20,8 +19,6 @@ done
 
 settings=(
   "Info__DeployDateTime=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-  "Dataverse__ServiceUrl=${DATAVERSE_SERVICE_URL}"
-  "Dataverse__AuthenticationType=SystemAssignedManagedIdentity"
   "StorageApi__BaseAddress=https://${AZURE_STORAGE_ACCOUNT_NAME}.table.core.windows.net/"
   "StorageApi__Timeout=01:00:00"
   "ExchangeRates__Storage__CurrentRatesTableName=CurrentRates"
@@ -35,6 +32,14 @@ az functionapp config appsettings set \
   --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
   --name "$AZURE_FUNCTION_NAME" \
   --settings "${settings[@]}" \
+  --output none \
+  --only-show-errors
+
+# Remove obsolete settings left by earlier deployments. Business storage still uses Managed Identity.
+az functionapp config appsettings delete \
+  --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+  --name "$AZURE_FUNCTION_NAME" \
+  --setting-names Dataverse__ServiceUrl Dataverse__AuthenticationType \
   --output none \
   --only-show-errors
 
