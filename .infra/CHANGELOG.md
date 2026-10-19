@@ -1,5 +1,13 @@
 # Журнал изменений инфраструктуры
 
+## 19.10.2026 — Исправление получения hostname Flex Function
+
+- Пользователь сообщил об ошибке CI/CD `Function hostname was not found` в Azure CLI 2.91.0.
+- Read-only проверка Azure для func-exchange-rates-test подтвердила: defaultHostName на верхнем уровне null, значение находится в properties.defaultHostName.
+- В configure-apim.sh и update-swagger.sh запрос изменён на `properties.defaultHostName || defaultHostName`, как в Production Calendar, с поддержкой обоих форматов ответа.
+- Проверки: новый запрос вернул func-exchange-rates-test.azurewebsites.net; bash -n обоих скриптов и git diff --check прошли. Настройка APIM и deployment не запускались, тесты не создавались.
+- Review: пользователь одобрил исправление командой «коммить» 19.10.2026; исправление включается в коммит, хеш фиксируется в координационном CURRENT_STATE.md. Push/deployment не выполняются. После отправки исправления нужно запустить новый deploy workflow из обновлённой ветки с skip_deploy=true для версии со Swagger endpoint: rerun старого запуска использует прежний commit.
+
 ## 19.10.2026 — Автоматическое именование API и Product
 
 - По замечанию пользователя повторно изучены prepare-apim.sh/update-swagger.sh Production Calendar: имя API, путь и Product там вычисляются по среде, а не запрашиваются отдельными переменными GitHub.

@@ -11,7 +11,7 @@ api_name="exchange-rates-$AZURE_NAME_POSTFIX"
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 function_subscription="$(az account show --query id --output tsv --only-show-errors)"
 apim_subscription="${APIM_SUBSCRIPTION_ID:-$function_subscription}"
-hostname="$(az functionapp show --subscription "$function_subscription" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --name "$AZURE_FUNCTION_NAME" --query defaultHostName --output tsv --only-show-errors)"
+hostname="$(az functionapp show --subscription "$function_subscription" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --name "$AZURE_FUNCTION_NAME" --query 'properties.defaultHostName || defaultHostName' --output tsv --only-show-errors)"
 [[ -n "$hostname" && "$hostname" != null ]] || { echo 'Function hostname was not found' >&2; exit 1; }
 # This is a host-level function key, never the administrative master key.
 function_key="$(az functionapp keys list --subscription "$function_subscription" --resource-group "$AZURE_RESOURCE_GROUP_NAME" --name "$AZURE_FUNCTION_NAME" --query functionKeys.default --output tsv --only-show-errors)"
