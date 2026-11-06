@@ -163,6 +163,7 @@ GitHub Environment настроен, но Prod deployment пока не выпо
 | `EXCHANGE_RATE_CURRENCY_PAIRS` | Да | Пары для timer handlers через `;`: `EUR/USD;EUR/RUB;USD/EUR;USD/RUB;RUB/EUR;RUB/USD` |
 | `CURRENT_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB текущих курсов, например `0 */10 * * * *` |
 | `DAILY_RATE_UPDATE_SCHEDULE` | Да | NCRONTAB дневных курсов, например `0 0 1 * * *` |
+| `DAILY_RATE_LOOKBACK_DAYS` | Нет | Глубина исторического поиска назад от запрошенной даты; default `7`, обе границы включены. `0` — только точная дата |
 | `FUNC_INSTANCE_MEMORY` | Нет | Память Flex instance: `512`, `2048` или `4096`; default `2048` |
 | `FUNC_MAX_INSTANCE_COUNT` | Нет | Максимальное число Flex instances; default `100` |
 | `APIM_RESOURCE_GROUP` | Да для APIM | Resource group существующего APIM |

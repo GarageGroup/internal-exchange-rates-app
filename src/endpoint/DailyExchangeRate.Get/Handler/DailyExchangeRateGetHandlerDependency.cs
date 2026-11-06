@@ -7,7 +7,7 @@ public static class DailyExchangeRateGetHandlerDependency
 {
     public static Dependency<IDailyExchangeRateGetHandler> UseDailyExchangeRateGetHandler<TStorageApi>(
         this Dependency<TStorageApi> dependency)
-        where TStorageApi : IDailyExchangeRateStorageGetSupplier
+        where TStorageApi : IDailyExchangeRateStorageFindSupplier
     {
         ArgumentNullException.ThrowIfNull(dependency);
         return dependency.Map<IDailyExchangeRateGetHandler>(CreateHandler);

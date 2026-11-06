@@ -17,12 +17,16 @@ for env_var in "${required_env_vars[@]}"; do
   fi
 done
 
+lookback_days="${DAILY_RATE_LOOKBACK_DAYS:-7}"
+[[ "$lookback_days" =~ ^(0|[1-9][0-9]*)$ ]] || { echo 'DAILY_RATE_LOOKBACK_DAYS must be a non-negative integer' >&2; exit 1; }
+
 settings=(
   "Info__DeployDateTime=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
   "StorageApi__BaseAddress=https://${AZURE_STORAGE_ACCOUNT_NAME}.table.core.windows.net/"
   "StorageApi__Timeout=01:00:00"
   "ExchangeRates__Storage__CurrentRatesTableName=CurrentRates"
   "ExchangeRates__Storage__DailyRatesTableName=DailyRates"
+  "ExchangeRates__Storage__DailyRateLookbackDays=${lookback_days}"
   "ExchangeRates__CurrencyPairs=${EXCHANGE_RATE_CURRENCY_PAIRS}"
   "ExchangeRates__CurrentUpdateSchedule=${CURRENT_RATE_UPDATE_SCHEDULE}"
   "ExchangeRates__DailyUpdateSchedule=${DAILY_RATE_UPDATE_SCHEDULE}"

@@ -100,6 +100,7 @@ jobs:
           EXCHANGE_RATE_CURRENCY_PAIRS: ${{ vars.EXCHANGE_RATE_CURRENCY_PAIRS }}
           CURRENT_RATE_UPDATE_SCHEDULE: ${{ vars.CURRENT_RATE_UPDATE_SCHEDULE }}
           DAILY_RATE_UPDATE_SCHEDULE: ${{ vars.DAILY_RATE_UPDATE_SCHEDULE }}
+          DAILY_RATE_LOOKBACK_DAYS: ${{ vars.DAILY_RATE_LOOKBACK_DAYS }}
         with:
           inlineScript: bash ./.infra/scripts/set-function-app-settings.sh
       - name: Configure API Management

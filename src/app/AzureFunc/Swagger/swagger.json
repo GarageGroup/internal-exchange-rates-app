@@ -88,7 +88,7 @@
       "get": {
         "operationId": "GetDailyExchangeRate",
         "summary": "Get daily exchange rate on or before a date",
-        "description": "Returns the nearest available rate on or before the requested date. effectiveDate identifies the returned rate date.",
+        "description": "Returns the nearest available rate on or before the requested date within the configured lookback period (default: 7 calendar days before the requested date, inclusive). effectiveDate identifies the returned rate date. Returns 404 if no rate is available in this period.",
         "parameters": [
           {
             "name": "baseCurrency",
@@ -146,7 +146,7 @@
             "description": "APIM subscription key is missing or invalid"
           },
           "404": {
-            "description": "Exchange rate not found",
+            "description": "No exchange rate within the configured lookback period",
             "content": {
               "application/json": {
                 "schema": {

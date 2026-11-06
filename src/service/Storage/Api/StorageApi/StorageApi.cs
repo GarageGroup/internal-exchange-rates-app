@@ -39,6 +39,8 @@ internal sealed partial class StorageApi : IStorageApi
 
     internal StorageApi(IHttpApi httpApi, StorageOption option)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(option.DailyRateLookbackDays);
+
         this.httpApi = httpApi;
         this.option = option;
     }

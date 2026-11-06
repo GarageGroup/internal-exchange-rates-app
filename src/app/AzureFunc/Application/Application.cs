@@ -37,7 +37,8 @@ internal static partial class Application
         return new()
         {
             CurrentRatesTableName = configuration.GetRequiredSection("ExchangeRates:Storage:CurrentRatesTableName").Value.OrEmpty(),
-            DailyRatesTableName = configuration.GetRequiredSection("ExchangeRates:Storage:DailyRatesTableName").Value.OrEmpty()
+            DailyRatesTableName = configuration.GetRequiredSection("ExchangeRates:Storage:DailyRatesTableName").Value.OrEmpty(),
+            DailyRateLookbackDays = configuration.GetValue("ExchangeRates:Storage:DailyRateLookbackDays", 7)
         };
     }
 

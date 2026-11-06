@@ -4,4 +4,5 @@ public interface IStorageApi :
     ICurrentExchangeRateStorageGetSupplier,
     ICurrentExchangeRateStorageSetSupplier,
     IDailyExchangeRateStorageGetSupplier,
+    IDailyExchangeRateStorageFindSupplier,
     IDailyExchangeRateStorageSetSupplier;

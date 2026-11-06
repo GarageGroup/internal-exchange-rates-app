@@ -115,6 +115,7 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
         { name: 'StorageApi__Timeout', value: '01:00:00' }
         { name: 'ExchangeRates__Storage__CurrentRatesTableName', value: 'CurrentRates' }
         { name: 'ExchangeRates__Storage__DailyRatesTableName', value: 'DailyRates' }
+        { name: 'ExchangeRates__Storage__DailyRateLookbackDays', value: '7' }
         { name: 'ExchangeRates__CurrentUpdateSchedule', value: '0 */10 * * * *' }
         { name: 'ExchangeRates__DailyUpdateSchedule', value: '0 0 1 * * *' }
       ]
